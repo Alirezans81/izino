@@ -1,12 +1,12 @@
-import { defineConfig as composer } from "@prisma/composer/config";
-import { nextjsBuild } from "@prisma/composer/nextjs/control";
-import { nodeBuild } from "@prisma/composer/node/control";
-import { prismaCloud, prismaState } from "@prisma/composer-prisma-cloud/control";
-import { definePrismaConfig } from "prisma/config";
+import 'dotenv/config';
+import { definePrismaConfig } from '@prisma/cli-engine';
+import { defineConfig as ormConfig } from '@prisma/orm-postgres/config';
 
 export default definePrismaConfig({
-  composer: composer({
-    extensions: [prismaCloud({ region: "ap-southeast-1" }), nodeBuild(), nextjsBuild()],
-    state: prismaState(),
+  orm: ormConfig({
+    contract: "./src/prisma/contract.prisma",
+    db: {
+      connection: process.env['DATABASE_URL']!,
+    },
   }),
 });
