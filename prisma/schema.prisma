@@ -1,6 +1,7 @@
 
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output = "./generated"
 }
 
 datasource db {
@@ -8,160 +9,59 @@ datasource db {
 }
 
 enum BookingStatus {
+  PENDING
   CONFIRMED
   CANCELLED
 }
 
-model Salon {
-  id          String     @id @default(cuid())
+model Artist {
+  id          String        @id @default(cuid())
   name        String
-  slug        String     @unique
-  description String?
+  slug        String        @unique
   phone       String?
-  address     String?
-  imageUrl    String?
-
-  stylists    Stylist[]
-
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-}
-
-model Stylist {
-  id           String     @id @default(cuid())
-  salonId      String
-  name         String
-  bio          String?
-  imageUrl     String?
-
-  // Login credentials for the stylist panel
-  email        String?    @unique
-  passwordHash String?
-  isActive     Boolean    @default(true)
-
-  salon        Salon           @relation(fields: [salonId], references: [id], onDelete: Cascade)
-  services     StylistService[]
-  workingHours WorkingHours[]
-  bookings     Booking[]
-
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-
-  @@index([salonId])
+  services    Service[]
+  workingHours WorkingHour[]
+  bookings    Booking[]
+  createdAt   DateTime      @default(now())
 }
 
 model Service {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   name        String
   description String?
-  category    String?
-  imageUrl    String?
-  isActive    Boolean  @default(true)
-
-  stylists    StylistService[]
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
-model StylistService {
-  id          String   @id @default(cuid())
-  stylistId   String
-  serviceId   String
-
-  // Duration in minutes; e.g. 30, 60, 90
-  durationMin Int
-
-  // Price in toman
-  priceToman  Int
-
-  isActive    Boolean  @default(true)
-
-  stylist     Stylist  @relation(fields: [stylistId], references: [id], onDelete: Cascade)
-  service     Service  @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  duration    Int       // مدت خدمت به دقیقه
+  price       Int       // قیمت به تومان
+  artistId    String
+  artist      Artist    @relation(fields: [artistId], references: [id], onDelete: Cascade)
   bookings    Booking[]
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@unique([stylistId, serviceId])
-  @@index([stylistId, isActive])
-}
-
-model WorkingHours {
-  id          String   @id @default(cuid())
-  stylistId   String
-
-  // 0 = Sunday, 1 = Monday, ... 6 = Saturday
-  dayOfWeek   Int
-
-  // Minutes since midnight:
-  // 08:00 = 480, 16:30 = 990
-  startMinute Int
-  endMinute   Int
-
-  isActive    Boolean  @default(true)
-
-  stylist     Stylist  @relation(fields: [stylistId], references: [id], onDelete: Cascade)
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@index([stylistId, dayOfWeek, isActive])
-}
-
-model Customer {
-  id          String    @id @default(cuid())
-  firstName   String
-  lastName    String
-  phone       String    @unique
-
-  bookings    Booking[]
-
   createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+}
+
+model WorkingHour {
+  id        String   @id @default(cuid())
+  dayOfWeek Int      // 0 = یکشنبه، 6 = شنبه؟ خیر؛ در ادامه توضیح
+  startTime String   // مثال: "09:00"
+  endTime   String   // مثال: "18:00"
+  artistId  String
+  artist    Artist   @relation(fields: [artistId], references: [id], onDelete: Cascade)
+
+  @@unique([artistId, dayOfWeek])
 }
 
 model Booking {
-  id                  String        @id @default(cuid())
-  stylistId           String
-  stylistServiceId    String
-  customerId          String
+  id          String        @id @default(cuid())
+  customerName String
+  customerPhone String
+  date        DateTime      @db.Date
+  startTime   String        // مثال: "14:30"
+  status      BookingStatus @default(PENDING)
+  artistId    String
+  serviceId   String
+  artist      Artist        @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  service     Service       @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  createdAt   DateTime      @default(now())
 
-  startAt             DateTime      @db.Timestamptz(3)
-  endAt               DateTime      @db.Timestamptz(3)
-
-  // Snapshot of service details at booking time
-  serviceName         String
-  durationMin         Int
-  priceToman          Int
-
-  status              BookingStatus @default(CONFIRMED)
-  customerNote        String?
-
-  stylist             Stylist        @relation(fields: [stylistId], references: [id], onDelete: Restrict)
-  stylistService      StylistService @relation(fields: [stylistServiceId], references: [id], onDelete: Restrict)
-  customer            Customer       @relation(fields: [customerId], references: [id], onDelete: Restrict)
-
-  referenceImages     BookingReferenceImage[]
-
-  createdAt           DateTime       @default(now())
-  updatedAt           DateTime       @updatedAt
-
-  @@index([stylistId, startAt])
-  @@index([customerId, startAt])
-  @@index([status, startAt])
+  @@index([artistId, date])
+  @@index([serviceId])
 }
 
-model BookingReferenceImage {
-  id          String   @id @default(cuid())
-  bookingId   String
-  imageUrl    String
-  description String?
-
-  booking     Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-
-  createdAt   DateTime @default(now())
-
-  @@index([bookingId])
-}

@@ -7,8 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "postinstall": "prisma skills sync || exit 0",
-    "contract:emit": "prisma contract emit"
+    "create-artist": "tsx ./scripts/create-artist.ts",
+    "create-service": "tsx ./scripts/create-service.ts",
+    "create-working-hours": "tsx ./scripts/create-working-hours.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
@@ -36,6 +37,7 @@
     "eslint-config-next": "16.4.0",
     "prisma": "^7.10.0",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5"
   },
   "packageManager": "pnpm@12.11.2",
